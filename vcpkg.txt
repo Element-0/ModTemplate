@@ -7,4 +7,3 @@ boost-format
 boost-multi-index
 sqlitecpp
 yaml-cpp
-chakracore
