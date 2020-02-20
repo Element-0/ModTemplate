@@ -48,7 +48,7 @@ jobs:
       if: steps.cachellvm.outputs.cache-hit != 'true'
       run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-        scoop install llvm tar wget --global
+        scoop install llvm wget --global
     - name: set environment
       run: |
         echo "::set-env name=CC::clang-cl"
