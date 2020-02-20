@@ -80,13 +80,14 @@ jobs:
     
     - name: Build
       run: |
+        cur=$(cygpath -m $(pwd))
         mkdir Build
         pushd Build
         cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DVCPKG_TARGET_TRIPLET:STRING="x64-windows-rel" \
-        -DCMAKE_INSTALL_PREFIX:PATH="D:/a/wine-bdlauncher/wine-bdlauncher/Dist" \
-        -DCMAKE_TOOLCHAIN_FILE="D:/a/wine-bdlauncher/wine-bdlauncher/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-        -DMOD_SDK_PATH="D:/a/wine-bdlauncher/wine-bdlauncher/SDK"
+        -DCMAKE_INSTALL_PREFIX:PATH="$cur/Dist" \
+        -DCMAKE_TOOLCHAIN_FILE="$cur/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+        -DMOD_SDK_PATH="$cur/SDK"
         ..
         ninja
         ninja install
