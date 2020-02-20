@@ -48,7 +48,7 @@ jobs:
       if: steps.cachellvm.outputs.cache-hit != 'true'
       run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-        scoop install llvm tar --global
+        scoop install llvm tar wget --global
     - name: set environment
       run: |
         echo "::set-env name=CC::clang-cl"
@@ -64,17 +64,10 @@ jobs:
 
     - name: Download SDK
       if: steps.sdkcache.outputs.cache-hit != 'true'
-      uses: Legion2/download-release-action@v2.1.0
-      with:
-        repository: codehz/wine-bdlauncher
-        tag: ${{ env.sdk_version }}
-        path: SDK
-        file: pkg.tar.xz
-
-    - name: Extract SDK
-      if: steps.sdkcache.outputs.cache-hit != 'true'
       run: |
+        mkdir SDK
         cd SDK
+        wget https://github.com/codehz/wine-bdlauncher/releases/download/${{ env.sdk_version }}/pkg.tar.xz
         tar xvf pkg.tar.xz --strip 1
         rm -rf pkg.tar.xz
     
