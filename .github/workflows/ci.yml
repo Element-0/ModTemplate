@@ -81,7 +81,7 @@ jobs:
         -DVCPKG_TARGET_TRIPLET:STRING="x64-windows-rel" \
         -DCMAKE_INSTALL_PREFIX:PATH="$cur/Dist" \
         -DCMAKE_TOOLCHAIN_FILE="$cur/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-        -DMOD_SDK_PATH="$cur/SDK"
+        -DMOD_SDK_PATH="$cur/SDK" \
         ..
         ninja
         ninja install
