@@ -1,0 +1,111 @@
+name: CI
+
+on: [push]
+env:
+  sdk_version: 200220
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set vcpkg's response file path used as part of cache's key.
+      env:
+        vcpkgResponseFile: ${{ github.workspace }}/vcpkg.txt
+      run: |
+        sed -i 's/VcPkgTriplets/..\\VcPkgTriplets/' $vcpkgResponseFile
+        echo "::set-env name=vcpkgResponseFile::$vcpkgResponseFile"
+      shell: bash
+
+    - name: Cache vcpkg artifacts
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: ${{ github.workspace }}/vcpkg
+        key: vcpkg-${{ hashFiles( env.vcpkgResponseFile ) }}
+
+    - name: run-vcpkg
+      uses: lukka/run-vcpkg@v0.9
+      id: runvcpkg
+      if: steps.cache.outputs.cache-hit != 'true'
+      with:
+        vcpkgGitCommitId: master
+        vcpkgArguments: '@${{ env.vcpkgResponseFile }}'
+
+    - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: cache llvm
+      uses: actions/cache@v1
+      id: cachellvm
+      with:
+        path: C:/ProgramData/scoop
+        key: scoop-llvm9.0.0
+
+    - name: install llvm
+      if: steps.cachellvm.outputs.cache-hit != 'true'
+      run: |
+        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+        scoop install llvm tar --global
+    - name: set environment
+      run: |
+        echo "::set-env name=CC::clang-cl"
+        echo "::set-env name=CXX::clang-cl"
+        echo "::set-env name=PATH::C:/ProgramData/scoop/shims;$env:PATH"
+
+    - name: Cache sdk
+      uses: actions/cache@v1
+      id: sdkcache
+      with:
+        path: ${{ github.workspace }}/SDK
+        key: sdk-${{ env.sdk_version }}
+
+    - name: Download SDK
+      if: steps.sdkcache.outputs.cache-hit != 'true'
+      uses: Legion2/download-release-action@v2.1.0
+      with:
+        repository: codehz/wine-bdlauncher
+        tag: ${{ env.sdk_version }}
+        path: SDK
+        file: pkg.tar.xz
+
+    - name: Extract SDK
+      if: steps.sdkcache.outputs.cache-hit != 'true'
+      run: |
+        cd SDK
+        tar xvf pkg.tar.xz --strip 1
+        rm -rf pkg.tar.xz
+    
+    - name: Build
+      run: |
+        mkdir Build
+        pushd Build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DVCPKG_TARGET_TRIPLET:STRING="x64-windows-rel" \
+        -DCMAKE_INSTALL_PREFIX:PATH="D:/a/wine-bdlauncher/wine-bdlauncher/Dist" \
+        -DCMAKE_TOOLCHAIN_FILE="D:/a/wine-bdlauncher/wine-bdlauncher/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+        -DMOD_SDK_PATH="D:/a/wine-bdlauncher/wine-bdlauncher/SDK"
+        ..
+        ninja
+        ninja install
+        popd
+        tar cvfJ pkg.tar.xz Dist/*
+      shell: bash
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: dist
+        path: Dist
+
+    - name: Create a new GitHub release if a new tag is pushed
+      uses: svenstaro/upload-release-action@v1-release
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: pkg.tar.xz
+        asset_name: pkg.tar.xz
+        tag: ${{ github.ref }}
+        overwrite: true
