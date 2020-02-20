@@ -70,6 +70,7 @@ jobs:
         wget https://github.com/codehz/wine-bdlauncher/releases/download/${{ env.sdk_version }}/pkg.tar.xz
         tar xvf pkg.tar.xz --strip 1
         rm -rf pkg.tar.xz
+      shell: bash
     
     - name: Build
       run: |
