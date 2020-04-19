@@ -48,7 +48,7 @@ function (def_mod name)
         yaml-cpp
         ModLoader
         BedrockServer
-        $<$<NOT:${IS_BASEMOD}>:Base>
+        Base
         ${ARG_LINK}
         ${ARG_DELAY_LINK})
     install (TARGETS ${name}
